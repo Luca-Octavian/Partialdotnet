@@ -1,4 +1,3 @@
-### Variables
 @baseUrl = http://localhost:5090
 
 ### 1. Create room
@@ -6,10 +5,7 @@
 POST {{baseUrl}}/api/rooms
 Content-Type: application/json
 
-{
-  "name": "Study room 1",
-  "capacity": 10
-}
+{ "name": "Study room 1", "capacity": 10 }
 
 ###
 @roomId = {{createRoom.response.body.$.id}}
@@ -17,39 +13,105 @@ Content-Type: application/json
 ### 2. Get room
 GET {{baseUrl}}/api/rooms/{{roomId}}
 
-### 3. Get a missing room (expected: 404)
+### 3. Missing room (404)
 GET {{baseUrl}}/api/rooms/00000000-0000-0000-0000-000000000001
 
-### 4. Create booking (change the dates to the future!)
-# @name createBooking
+### 4. Invalid room name (400)
+POST {{baseUrl}}/api/rooms
+Content-Type: application/json
+
+{ "name": "  ", "capacity": 10 }
+
+### 5. Invalid capacity (400)
+POST {{baseUrl}}/api/rooms
+Content-Type: application/json
+
+{ "name": "X", "capacity": 0 }
+
+### 6. Booking A 10-12 (201)
+# @name bookingA
 POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
 Content-Type: application/json
 
-{
-  "bookedBy": "ana",
-  "startUtc": "2030-01-10T10:00:00Z",
-  "endUtc": "2030-01-10T12:00:00Z",
-  "attendees": 4
-}
+{ "bookedBy": "ana", "startUtc": "2030-01-10T10:00:00Z", "endUtc": "2030-01-10T12:00:00Z", "attendees": 4 }
 
 ###
-@bookingId = {{createBooking.response.body.$.id}}
+@bookingId = {{bookingA.response.body.$.id}}
 
-### 5. Get booking
+### 7. Get booking
 GET {{baseUrl}}/api/bookings/{{bookingId}}
 
-### 6. Overlapping booking (expected: 409)
+### 8. Overlap 11-13 (409)
 POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
 Content-Type: application/json
 
-{
-  "bookedBy": "bogdan",
-  "startUtc": "2030-01-10T11:00:00Z",
-  "endUtc": "2030-01-10T13:00:00Z",
-  "attendees": 4
-}
+{ "bookedBy": "bogdan", "startUtc": "2030-01-10T11:00:00Z", "endUtc": "2030-01-10T13:00:00Z", "attendees": 4 }
 
-### 7. Cancel booking
+### 9. Touching 12-14 (201)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "bogdan", "startUtc": "2030-01-10T12:00:00Z", "endUtc": "2030-01-10T14:00:00Z", "attendees": 4 }
+
+### 10. Booking in missing room (404)
+POST {{baseUrl}}/api/rooms/00000000-0000-0000-0000-000000000001/bookings
+Content-Type: application/json
+
+{ "bookedBy": "ana", "startUtc": "2030-01-10T10:00:00Z", "endUtc": "2030-01-10T12:00:00Z", "attendees": 4 }
+
+### 11. BookedBy missing (400)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "", "startUtc": "2030-02-10T10:00:00Z", "endUtc": "2030-02-10T12:00:00Z", "attendees": 4 }
+
+### 12. End before start (400)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "ana", "startUtc": "2030-02-10T12:00:00Z", "endUtc": "2030-02-10T10:00:00Z", "attendees": 4 }
+
+### 13. Attendees zero (400)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "ana", "startUtc": "2030-02-10T10:00:00Z", "endUtc": "2030-02-10T12:00:00Z", "attendees": 0 }
+
+### 14. Attendees over capacity (400)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "ana", "startUtc": "2030-02-10T10:00:00Z", "endUtc": "2030-02-10T12:00:00Z", "attendees": 11 }
+
+### 15. Start in the past (400)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "ana", "startUtc": "2020-01-10T10:00:00Z", "endUtc": "2020-01-10T12:00:00Z", "attendees": 4 }
+
+### 16. Exactly 4 hours (201)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "ana", "startUtc": "2030-03-10T10:00:00Z", "endUtc": "2030-03-10T14:00:00Z", "attendees": 4 }
+
+### 17. Over 4 hours (400)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "ana", "startUtc": "2030-04-10T10:00:00Z", "endUtc": "2030-04-10T14:00:01Z", "attendees": 4 }
+
+### 18. Cancel booking A (204)
 POST {{baseUrl}}/api/bookings/{{bookingId}}/cancel
 
-### 8. Add your own requests here for the rules in ASSIGNMENT.md
+### 19. Cancel again (409)
+POST {{baseUrl}}/api/bookings/{{bookingId}}/cancel
+
+### 20. Cancel missing (404)
+POST {{baseUrl}}/api/bookings/00000000-0000-0000-0000-000000000001/cancel
+
+### 21. Rebook the freed interval 10-12 (201)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "carla", "startUtc": "2030-01-10T10:00:00Z", "endUtc": "2030-01-10T12:00:00Z", "attendees": 4 }
