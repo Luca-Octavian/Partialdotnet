@@ -7,4 +7,9 @@ public interface IBookingRepository
     Task<IReadOnlyCollection<Booking>> ListActiveForRoomAsync(Guid roomId, CancellationToken cancellationToken);
 
     Task AddAsync(Booking booking, CancellationToken cancellationToken);
+
+    Task<int> CountActiveForParticipantOnDayAsync(
+        string bookedBy,
+        DateTime dayStartUtc,
+        CancellationToken cancellationToken);
 }

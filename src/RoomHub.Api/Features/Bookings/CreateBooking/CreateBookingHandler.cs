@@ -21,13 +21,22 @@ public sealed class CreateBookingHandler(
 
         var existingBookings = await bookings.ListActiveForRoomAsync(room.Id, cancellationToken);
 
+        var bookedBy = command.BookedBy?.Trim();
+        var participantBookingsThatDay = string.IsNullOrEmpty(bookedBy)
+            ? 0
+            : await bookings.CountActiveForParticipantOnDayAsync(
+                bookedBy,
+                command.StartUtc.Date,
+                cancellationToken);
+
         var booked = room.Book(
             command.BookedBy,
             command.StartUtc,
             command.EndUtc,
             command.Attendees,
             timeProvider.GetUtcNow().UtcDateTime,
-            existingBookings);
+            existingBookings,
+            participantBookingsThatDay);
 
         if (booked.IsFailure)
             return booked.Error;

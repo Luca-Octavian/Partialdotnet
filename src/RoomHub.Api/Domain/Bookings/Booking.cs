@@ -6,6 +6,8 @@ public sealed class Booking
 {
     private static readonly TimeSpan MaxDuration = TimeSpan.FromHours(4);
 
+    public const int MaxActivePerParticipantPerDay = 2;
+
     private Booking()
     {
     }

@@ -37,7 +37,8 @@ public sealed class Room
         DateTime endUtc,
         int attendees,
         DateTime nowUtc,
-        IReadOnlyCollection<Booking> existingBookings)
+        IReadOnlyCollection<Booking> existingBookings,
+        int participantActiveBookingsOnDay)
     {
         var created = Booking.Create(Id, bookedBy, startUtc, endUtc, attendees, nowUtc);
         if (created.IsFailure)
@@ -50,6 +51,9 @@ public sealed class Room
 
         if (existingBookings.Any(existing => existing.IsActive && booking.Overlaps(existing)))
             return BookingErrors.RoomOccupied;
+
+        if (participantActiveBookingsOnDay >= Booking.MaxActivePerParticipantPerDay)
+            return BookingErrors.DailyLimitExceeded;
 
         return booking;
     }
