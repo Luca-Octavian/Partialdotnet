@@ -8,6 +8,8 @@ public sealed class Booking
 
     public const int MaxActivePerParticipantPerDay = 2;
 
+    private static readonly TimeSpan MinCancellationNotice = TimeSpan.FromMinutes(60);
+
     private Booking()
     {
     }
@@ -65,10 +67,13 @@ public sealed class Booking
 
     public bool Overlaps(Booking other) => StartUtc < other.EndUtc && other.StartUtc < EndUtc;
 
-    public Result Cancel()
+    public Result Cancel(DateTime nowUtc)
     {
         if (Status == BookingStatus.Cancelled)
             return BookingErrors.AlreadyCancelled;
+
+        if (StartUtc < nowUtc.Add(MinCancellationNotice))
+            return BookingErrors.CancellationTooLate;
 
         Status = BookingStatus.Cancelled;
         return Result.Success();

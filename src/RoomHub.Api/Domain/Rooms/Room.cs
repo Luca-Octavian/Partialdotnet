@@ -5,6 +5,9 @@ namespace RoomHub.Api.Domain.Rooms;
 
 public sealed class Room
 {
+    private const int LargeRoomCapacityThreshold = 10;
+    private static readonly TimeSpan LargeRoomMaxDuration = TimeSpan.FromHours(2);
+
     private Room()
     {
     }
@@ -48,6 +51,9 @@ public sealed class Room
 
         if (attendees > Capacity)
             return BookingErrors.AttendeesExceedCapacity;
+
+        if (Capacity > LargeRoomCapacityThreshold && endUtc - startUtc > LargeRoomMaxDuration)
+            return BookingErrors.DurationTooLongForLargeRoom;
 
         if (existingBookings.Any(existing => existing.IsActive && booking.Overlaps(existing)))
             return BookingErrors.RoomOccupied;

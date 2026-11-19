@@ -115,3 +115,86 @@ POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
 Content-Type: application/json
 
 { "bookedBy": "carla", "startUtc": "2030-01-10T10:00:00Z", "endUtc": "2030-01-10T12:00:00Z", "attendees": 4 }
+### R9-1. ana, 2030-05-10, room 1 (201)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "ana", "startUtc": "2030-05-10T08:00:00Z", "endUtc": "2030-05-10T09:00:00Z", "attendees": 2 }
+
+### R9-2. ana, same day, later (201)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "ana", "startUtc": "2030-05-10T10:00:00Z", "endUtc": "2030-05-10T11:00:00Z", "attendees": 2 }
+
+### R9-3. ana, same day, third booking (409)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "ana", "startUtc": "2030-05-10T12:00:00Z", "endUtc": "2030-05-10T13:00:00Z", "attendees": 2 }
+
+### R9-4. ana, different day (201)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "ana", "startUtc": "2030-05-11T08:00:00Z", "endUtc": "2030-05-11T09:00:00Z", "attendees": 2 }
+
+### R9-5. another participant, same day as R9-3 (201)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "dan", "startUtc": "2030-05-10T12:00:00Z", "endUtc": "2030-05-10T13:00:00Z", "attendees": 2 }
+
+### R10-1. Create large room, capacity 11
+# @name largeRoom
+POST {{baseUrl}}/api/rooms
+Content-Type: application/json
+
+{ "name": "Large room", "capacity": 11 }
+
+###
+@largeRoomId = {{largeRoom.response.body.$.id}}
+
+### R10-2. Large room, exactly 2 hours (201)
+POST {{baseUrl}}/api/rooms/{{largeRoomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "r10a", "startUtc": "2030-06-10T10:00:00Z", "endUtc": "2030-06-10T12:00:00Z", "attendees": 5 }
+
+### R10-3. Large room, over 2 hours (400)
+POST {{baseUrl}}/api/rooms/{{largeRoomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "r10b", "startUtc": "2030-06-11T10:00:00Z", "endUtc": "2030-06-11T12:00:01Z", "attendees": 5 }
+
+### R10-4. Capacity 10 room, 4 hours still allowed (201)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "r10c", "startUtc": "2030-06-12T10:00:00Z", "endUtc": "2030-06-12T14:00:00Z", "attendees": 5 }
+
+### R11-1. Booking that starts in 30 minutes
+# @name soonBooking
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "r11a", "startUtc": "{{$datetime iso8601 30 m}}", "endUtc": "{{$datetime iso8601 90 m}}", "attendees": 2 }
+
+###
+@soonBookingId = {{soonBooking.response.body.$.id}}
+
+### R11-2. Cancel it, starts in under 60 min (409)
+POST {{baseUrl}}/api/bookings/{{soonBookingId}}/cancel
+
+### R11-3. Booking that starts in 3 hours
+# @name laterBooking
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{ "bookedBy": "r11b", "startUtc": "{{$datetime iso8601 3 h}}", "endUtc": "{{$datetime iso8601 4 h}}", "attendees": 2 }
+
+###
+@laterBookingId = {{laterBooking.response.body.$.id}}
+
+### R11-4. Cancel it, starts in over 60 min (204)
+POST {{baseUrl}}/api/bookings/{{laterBookingId}}/cancel
